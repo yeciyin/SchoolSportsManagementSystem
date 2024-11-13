@@ -1,0 +1,9 @@
+School_of_Communication_and_Information_Engineering 1
+School_of_Electronic_and_Optical_Engineering 2
+School_of_Flexible_Electronics_(Future_Technology) 3
+School_of_Integrated_Circuit_Science_and_Engineering_(Industry-Education_Integration_School) 4
+School_of_Computer_Science 5
+School_of_Software 6
+School_of_Cyberspace_Security 7
+School_of_Automation 8
+School_of_Artificial+Intelligence 9
