@@ -9,6 +9,7 @@ using namespace std;
 //全局变量
 char athleteID[20]; // Athlete ID or Staff ID
 char refereeName[50]; // Athlete Name
+int isAdmin; // 1: Admin, 0: Not Admin
 
 // 定义结构体类型
 typedef struct {
@@ -91,6 +92,7 @@ int authenticate(char *username, char *password, int *role);
 
 // 主函数
 int main() {
+    printf("欢迎使用运动会管理系统\n");
     login();
     return 0;
 }
@@ -98,12 +100,14 @@ int main() {
 // 用户登录函数
 void login() {
     int choice;
-    printf("请选择身份:\n");
+    printf("-------------------------\n");
     printf("1. 管理员\n");
     printf("2. 运动员/裁判员\n");
-    printf("3. 退出系统\n");
+    printf("3. 注册账户\n");
+    printf("4. 退出系统\n");
+    printf("请选择身份: ");
     scanf("%d", &choice);
-
+    printf("-------------------------\n");
     switch (choice) {
         case 1:
             loginPassword();
@@ -112,6 +116,11 @@ void login() {
             loginWithoutPassword();
             break;
         case 3:
+            isAdmin = 0;
+            addUser();
+            login();
+            break;
+        case 4:
             exit(0);
         default:
             printf("无效的选择\n");
@@ -122,6 +131,7 @@ void login() {
 void loginPassword(){
     char username[20], password[20];
     int role;
+    printf("-------------------------\n");
     printf("请输入用户名: ");
     scanf("%s", username);
     printf("请输入密码: ");
@@ -138,6 +148,7 @@ void loginPassword(){
     }
     password[i] = '\0';
     printf("\n");
+    printf("-------------------------\n");
 
     // 验证用户名和密码
     if (authenticate(username, password, &role)) {
@@ -158,9 +169,11 @@ void loginPassword(){
 void loginWithoutPassword(){
     char username[20], password[20];
     int role;
+    printf("-------------------------\n");
     printf("请输入学号（教工用职工号）（学生裁判用学号）: ");
     scanf("%s", username);
     strcpy(password, "none");
+    printf("-------------------------\n");
 
     // 验证用户名和密码
     if (authenticate(username, password, &role)) {
@@ -209,6 +222,7 @@ void adminMenu() {
     printf("欢迎管理员\n");
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 管理比赛项目\n");
         printf("2. 管理用户信息\n");
         printf("3. 管理赛程\n");
@@ -217,6 +231,7 @@ void adminMenu() {
         printf("6. 退出登录\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 manageProjects();
@@ -251,13 +266,22 @@ void reviewRegistrations(){
         return;
     }
 
-    printf("审核报名:\n");
+    printf("待审核的报名:\n");
+    int exist = 0;
     while (fscanf(file, "%s %s %s %s %d %s %d", registration.athleteID, registration.projectName, registration.group, registration.nature, &registration.athleteNumber, registration.departmentID, &registration.approval) != EOF) {
-        printf("运动员ID: %s, 项目名称: %s, 项目组别: %s, 项目性质: %s, 项目人数: %d, 学院ID: %s, 审核状态: %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
+        if(registration.approval == 0) {
+            exist = 1;
+            printf("运动员ID: %s, 项目名称: %s, 项目组别: %s, 项目性质: %s, 项目人数: %d, 学院ID: %s, 审核状态: %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
+        }
     }
     rewind(file);
 
+    if(exist){
     char athleteID[20], projectName[50];
+    printf("请输入要审核的运动员ID: ");
+    scanf("%s", athleteID);
+    printf("请输入需审核的项目名称: ");
+    scanf("%s", projectName);
 
     int found = 0;
     FILE *tempFile = fopen("temp.txt", "w");
@@ -268,24 +292,13 @@ void reviewRegistrations(){
     }
 
     while (fscanf(file, "%s %s %s %s %d %s %d", registration.athleteID, registration.projectName, registration.group, registration.nature, &registration.athleteNumber, registration.departmentID, &registration.approval) != EOF) {
-        if (registration.approval == 0) {
+        if ((strcmp(registration.athleteID, athleteID) == 0 && strcmp(registration.projectName, projectName) == 0) && registration.approval == 0) {
             found = 1;
             printf("其项目组别为: %s, 项目性质为: %s, 项目人数为: %d, 学院ID为: %s\n", registration.group, registration.nature, registration.athleteNumber, registration.departmentID);
             printf("请输入审核结果 (1: 通过, 2: 未通过): ");
             scanf("%d", &registration.approval);
         }
         fprintf(tempFile, "%s %s %s %s %d %s %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
-    }
-
-    if (found) {
-        FILE *regFile = fopen("registrations.txt", "a");
-        if (regFile == NULL) {
-            printf("无法打开报名文件\n");
-            fclose(tempFile);
-            return;
-        }
-        fprintf(regFile, "%s %s %s %s %d %s %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
-        fclose(regFile);
     }
 
     fclose(file);
@@ -297,16 +310,19 @@ void reviewRegistrations(){
     if (found) {
         printf("审核完成\n");
     } else {
-        printf("已全部审核完毕\n");
+        printf("未找到该报名\n");
+    }
+    } else {
+        printf("已全部审核完毕!\n");
     }
 }
-
 
 // 运动员菜单
 void athleteMenu() {
     printf("欢迎运动员\n");
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 查询比赛项目\n");
         printf("2. 报名\n");
         printf("3. 修改报名\n");
@@ -315,6 +331,7 @@ void athleteMenu() {
         printf("6. 退出登录\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
             queryByProject();
@@ -345,11 +362,13 @@ void refereeMenu() {
     printf("欢迎裁判员\n");
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 查询自己担任裁判工作的项目\n");
         printf("2. 查询运动会的赛程安排\n");
         printf("3. 退出登录\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 queryRefereeProjects();
@@ -371,12 +390,14 @@ void manageProjects() {
     // 增加、修改、删除、查询比赛项目的具体实现
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 增加比赛项目\n");
         printf("2. 修改比赛项目\n");
         printf("3. 删除比赛项目\n");
         printf("4. 返回\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 addProject();
@@ -399,6 +420,7 @@ void manageProjects() {
 // 增加比赛项目函数
 void addProject() {
     Project project;
+    printf("-------------------------\n");
     printf("请输入项目名称: ");
     scanf("%s", project.projectName);
     FILE *file = fopen("projects.txt", "a");
@@ -522,6 +544,7 @@ void addProject() {
     fprintf(file, "%s %s %s %d %d %s %s %s\n", project.projectName, project.group, project.nature, project.maxParticipants, project.minParticipants, project.rules, project.referee, project.otherInfo);
     fclose(file);
     printf("项目添加成功\n");
+    printf("-------------------------\n");
     return;
 }
 
@@ -533,6 +556,7 @@ void modifyProject() {
 
 // 删除比赛项目函数
 void deleteProject() {
+    printf("-------------------------\n");
     char projectName[50];
     Project project;
     FILE *file = fopen("projects.txt", "r");
@@ -541,7 +565,6 @@ void deleteProject() {
         printf("无法打开项目文件\n");
         return;
     }
-
     while (fscanf(file, "%s %s %s %d %d %s %s %s", project.projectName, project.group, project.nature, &project.maxParticipants, &project.minParticipants, project.rules, project.referee, project.otherInfo) != EOF) {
         printf("项目名称：%s\n", project.projectName);
     }
@@ -585,15 +608,38 @@ void deleteProject() {
     remove("schedule.txt");
     rename("temp_schedule.txt", "schedule.txt");
 
+    // 删除运动员报名信息
+    Registration registration;
+    FILE *regFile = fopen("registrations.txt", "r");
+    FILE *tempRegFile = fopen("temp_registrations.txt", "w");
+    if (regFile == NULL || tempRegFile == NULL) {
+        printf("无法打开报名文件\n");
+        return;
+    }
+
+    while (fscanf(regFile, "%s %s %s %s %d %s %d", registration.athleteID, registration.projectName, registration.group, registration.nature, &registration.athleteNumber, registration.departmentID, &registration.approval) != EOF) {
+        if (strcmp(registration.projectName, projectName) != 0 || strcmp(registration.group, project.group) != 0 || strcmp(registration.nature, project.nature) != 0) {
+            fprintf(tempRegFile, "%s %s %s %s %d %s %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
+        }
+    }
+
+    fclose(regFile);
+    fclose(tempRegFile);
+
+    remove("registrations.txt");
+    rename("temp_registrations.txt", "registrations.txt");
+
     if (found) {
         printf("项目删除成功\n");
     } else {
         printf("未找到该项目\n");
     }
+    printf("-------------------------\n");
 }
 
 // 查询比赛项目函数
 void queryByProject() {
+    printf("-------------------------\n");
     char projectName[50];
     Project project;
     FILE *file = fopen("projects.txt", "r");
@@ -601,7 +647,6 @@ void queryByProject() {
         printf("无法打开项目文件\n");
         return;
     }
-
     while (fscanf(file, "%s %s %s %d %d %s %s %s", project.projectName, project.group, project.nature, &project.maxParticipants, &project.minParticipants, project.rules, project.referee, project.otherInfo) != EOF) {
         printf("项目名称: %s\n", project.projectName);
     }
@@ -630,17 +675,20 @@ void queryByProject() {
         if (!found) {
             printf("未找到该项目\n");
         }
+    printf("-------------------------\n");
 }
 // 管理用户信息函数
 void manageUsers() {
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 增加用户\n");
         printf("2. 修改用户\n");
         printf("3. 删除用户\n");
         printf("4. 返回\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 addUser();
@@ -662,6 +710,7 @@ void manageUsers() {
 
 // 增加用户函数
 void addUser() {
+    printf("-------------------------\n");
     User user;
     FILE *file = fopen("users.txt", "a");
     if (file == NULL) {
@@ -669,8 +718,24 @@ void addUser() {
         return;
     }
 
-    printf("请输入角色 (0: 管理员, 1: 运动员, 2: 裁判员): ");
-    scanf("%d", &user.role);
+    if(isAdmin == 0){
+        printf("请输入角色 (1: 运动员, 2: 裁判员): ");
+        scanf("%d", &user.role);
+        switch (user.role)
+        {
+        case 1:
+            break;
+        case 2:
+            break;
+        default:
+            printf("无效的角色\n");
+            break;
+        }
+       
+    } else {
+        printf("请输入角色 (0: 管理员, 1: 运动员, 2: 裁判员): ");
+        scanf("%d", &user.role);
+    }
 
     if(user.role == 0) {
         printf("请输入用户名: ");
@@ -704,6 +769,7 @@ void addUser() {
     fprintf(file, "%s %s %d\n", user.username, user.password, user.role);
     fclose(file);
     printf("用户添加成功\n");
+    printf("-------------------------\n");
 }
 
 // 修改用户函数
@@ -714,6 +780,7 @@ void modifyUser() {
 
 // 删除用户函数
 void deleteUser() {
+    printf("-------------------------\n");
     char username[20];
     User user;
     FILE *file = fopen("users.txt", "r");
@@ -722,7 +789,6 @@ void deleteUser() {
         printf("无法打开用户文件\n");
         return;
     }
-
     while (fscanf(file, "%s %s %d", user.username, user.password, &user.role) != EOF) {
         printf("用户名：%s\n", user.username);
     }
@@ -751,10 +817,12 @@ void deleteUser() {
     } else {
         printf("未找到该用户\n");
     }
+    
 }
 
 // 查询用户函数
 void queryByUser() {
+    printf("-------------------------\n");
     char username[20];
     User user;
     FILE *file = fopen("users.txt", "r");
@@ -786,17 +854,20 @@ void queryByUser() {
     if (!found) {
         printf("未找到该用户\n");
     }
+    printf("-------------------------\n");
 }
 
 void manageSchdule(){
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 增加赛程\n");
         printf("2. 修改赛程\n");
         printf("3. 删除赛程\n");
         printf("4. 返回\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 addSchedule();
@@ -817,6 +888,7 @@ void manageSchdule(){
 
 // 添加赛程函数
 void addSchedule() {
+    printf("-------------------------\n");
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "a");
     if (file == NULL) {
@@ -899,6 +971,7 @@ void addSchedule() {
     fprintf(file, "%s %s %s %s\n", schedule.projectName, schedule.date, schedule.time, schedule.venue);
     fclose(file);
     printf("赛程安排成功\n");
+    printf("-------------------------\n");
 }
 
 void modifySchedule() {
@@ -907,6 +980,7 @@ void modifySchedule() {
 }
 
 void deleteSchedule() {
+    printf("-------------------------\n");
     char projectName[50];
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "r");
@@ -944,6 +1018,7 @@ void deleteSchedule() {
     } else {
         printf("未找到该赛程\n");
     }
+    printf("-------------------------\n");
 }
 
 // 查询函数
@@ -951,6 +1026,7 @@ void query() {
     // 查询的具体实现
     int choice;
     while (1) {
+        printf("-------------------------\n");
         printf("1. 按比赛项目查询\n");
         printf("2. 按用户查询\n");
         printf("3. 按学院查询\n");
@@ -960,6 +1036,7 @@ void query() {
         printf("7. 返回\n");
         printf("请选择: ");
         scanf("%d", &choice);
+        printf("-------------------------\n");
         switch (choice) {
             case 1:
                 queryByProject();
@@ -988,6 +1065,7 @@ void query() {
 }
 
 void queryByDepartment() {
+    printf("-------------------------\n");
     char departmentID[20];
     Registration registration;
     FILE *file = fopen("registrations.txt", "r");
@@ -1022,9 +1100,11 @@ void queryByDepartment() {
     if (!found) {
         printf("未找到该学院的运动员\n");
     }
+    printf("-------------------------\n");
 }
 
 void queryByAthlete() {
+    printf("-------------------------\n");
     char athleteID[20];
     Registration registration;
     FILE *file = fopen("registrations.txt", "r");
@@ -1073,9 +1153,11 @@ void queryByAthlete() {
     if (!found) {
         printf("未找到该运动员\n");
     }
+    printf("-------------------------\n");
 }
 
 void queryByVenue() {
+    printf("-------------------------\n");
     char venue[50];
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "r");
@@ -1107,9 +1189,11 @@ void queryByVenue() {
     if (!found) {
         printf("未找到该场地的赛程\n");
     }
+    printf("-------------------------\n");
 }
 
 void queryByTime() {
+    printf("-------------------------\n");
     char date[20], time[10];
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "r");
@@ -1144,9 +1228,11 @@ void queryByTime() {
     if (!found) {
         printf("未找到该时间的赛程\n");
     }
+    printf("-------------------------\n");
 }
 
 void queryReviewProgress() {
+    printf("-------------------------\n");
     Registration registration;
     FILE *file = fopen("registrations.txt", "r");
     if (file == NULL) {
@@ -1160,10 +1246,11 @@ void queryReviewProgress() {
     }
 
     fclose(file);
+    printf("-------------------------\n");
 }
 
 void queryRefereeProjects(){
-    
+    printf("-------------------------\n");
     Project project;
     Schedule schedule;
     Registration registration;
@@ -1201,16 +1288,17 @@ void queryRefereeProjects(){
     fclose(projectFile);
     fclose(scheduleFile);
     fclose(registrationFile);
+    printf("-------------------------\n");
 }
 
 void querySchedule(){
+    printf("-------------------------\n");
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "r");
     if (file == NULL) {
         printf("无法打开赛程文件\n");
         return;
     }
-
     printf("运动会赛程安排:\n");
     while (fscanf(file, "%s %s %s %s", schedule.projectName, schedule.date, schedule.time, schedule.venue) != EOF) {
         printf("项目名称: %s\n", schedule.projectName);
@@ -1219,11 +1307,12 @@ void querySchedule(){
         printf("场地: %s\n", schedule.venue);
         printf("-------------------------\n");
     }
-
     fclose(file);
+    printf("-------------------------\n");
 }
 
-void addRegistration() {
+void addRegistration() {//zhaozhide
+    printf("-------------------------\n");
     Registration registration;
     FILE *file = fopen("registrations.txt", "a");
     if (file == NULL) {
@@ -1282,69 +1371,39 @@ void addRegistration() {
         fclose(projectFile);
         return;
     }
+    // 从项目文件中读取组别信息
+    projectFile = fopen("projects.txt", "r");
+    if (projectFile == NULL) {
+        printf("无法打开项目文件\n");
+        fclose(file);
+        return;
+    }
 
-    printf("请输入新的组别(用数字代替): \n");
-    printf("1.教工老年男子组\n");
-    printf("2.教工老年女子组\n");
-    printf("3.教工中年男子组\n");
-    printf("4.教工中年女子组\n");
-    printf("5.教工青年男子组\n");
-    printf("6.教工青年女子组\n");
-    printf("7.研究生男子组\n");
-    printf("8.研究生女子组\n");
-    printf("9.本科生男子组\n");
-    printf("10.本科生女子组\n");
-    printf("11.男女混合组\n");
+    printf("请选择项目组别(用数字代替): \n");
+    int groupCount = 0;
+    char groups[20][50]; // 假设最多有20个组别，每个组别名称最长50个字符
+    while (fscanf(projectFile, "%s %s %s %d %d %s %s %s", project.projectName, project.group, project.nature, &project.maxParticipants, &project.minParticipants, project.rules, project.referee, project.otherInfo) != EOF) {
+        if (strcmp(project.projectName, registration.projectName) == 0) {
+            strcpy(groups[groupCount++], project.group);
+            printf("%d. %s\n", groupCount, project.group);
+        }
+    }
+    fclose(projectFile);
+
     int choice;
     scanf("%d", &choice);
 
-    switch (choice) {
-        case 1:
-            strcpy(registration.group, "Faculty_Senior_Men's_Group");
-            break;
-        case 2:
-            strcpy(registration.group, "Faculty_Senior_Women's_Group");
-            break;
-        case 3:
-            strcpy(registration.group, "Faculty_Middle-aged_Men's_Group");
-            break;
-        case 4:
-            strcpy(registration.group, "Faculty_Middle-aged_Women's_Group");
-            break;
-        case 5:
-            strcpy(registration.group, "Faculty_Young_Men's_Group");
-            break;
-        case 6:
-            strcpy(registration.group, "Faculty_Young_Women's_Group");
-            break;
-        case 7:
-            strcpy(registration.group, "Graduate_Men's_Group");
-            break;
-        case 8:
-            strcpy(registration.group, "Graduate_Women's_Group");
-            break;
-        case 9:
-            strcpy(registration.group, "Undergraduate_Men's_Group");
-            break;
-        case 10:
-            strcpy(registration.group, "Undergraduate_Women's_Group");
-            break;
-        case 11:
-            strcpy(registration.group, "Mixed_Group");
-            break;
-        default:
-            printf("无效的选择\n按任意键返回\n");
-            fclose(file);
-            fclose(projectFile);
-            return;
+    if (choice > 0 && choice <= groupCount) {
+        strcpy(registration.group, groups[choice - 1]);
+    } else {
+        printf("无效的选择\n按任意键返回\n");
+        addRegistration();
     }
 
-    printf("请输入项目性质: \n");
-    printf("1.个人赛\n");
-    printf("2.团体赛\n");
-    scanf("%d", &choice);
-
-    switch (choice) {
+    printf("请输入项目性质 (1: 个人赛, 2: 团体赛): ");
+    int natureChoice;
+    scanf("%d", &natureChoice);
+    switch (natureChoice) {
         case 1:
             strcpy(registration.nature, "individual");
             break;
@@ -1352,10 +1411,12 @@ void addRegistration() {
             strcpy(registration.nature, "team");
             break;
         default:
+            printf("无效的选择\n");
             fclose(file);
             fclose(projectFile);
             return;
     }
+
 
     int maxAthleteNumber = 0;
     tempFile = fopen("registrations.txt", "r");
@@ -1369,6 +1430,7 @@ void addRegistration() {
     } else {
         printf("无法打开文件\n");
     }
+
     registration.athleteNumber = maxAthleteNumber + 1;
 
     displayAllDepartments();
@@ -1380,6 +1442,7 @@ void addRegistration() {
     fclose(file);
     fclose(projectFile);
     printf("报名成功\n");
+    printf("-------------------------\n");
 }
 
 void modifyRegistration(){
@@ -1388,6 +1451,7 @@ void modifyRegistration(){
 }
 
 void queryAthleteSchedule(){
+    printf("-------------------------\n");
     Schedule schedule;
     FILE *file = fopen("schedule.txt", "r");
     if (file == NULL) {
@@ -1423,9 +1487,11 @@ void queryAthleteSchedule(){
     if (!found) {
         printf("未找到该运动员的赛程\n");
     }
+    printf("-------------------------\n");
 }
 
 void deleteRegistration() {
+    printf("-------------------------\n");
     char athleteID[20], projectName[50];
     Registration registration;
     FILE *file = fopen("registrations.txt", "r");
@@ -1435,11 +1501,17 @@ void deleteRegistration() {
         return;
     }
 
+    printf("可删除的报名:\n");
+    int exist = 0;
     while (fscanf(file, "%s %s %s %s %d %s %d", registration.athleteID, registration.projectName, registration.group, registration.nature, &registration.athleteNumber, registration.departmentID, &registration.approval) != EOF) {
-        printf("运动员ID: %s, 项目名称: %s, 项目组别: %s, 项目性质: %s, 项目人数: %d, 学院ID: %s, 审核状态: %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
+        if (registration.approval == 0){
+            exist = 1;
+            printf("运动员ID: %s, 项目名称: %s, 项目组别: %s, 项目性质: %s, 项目人数: %d, 学院ID: %s, 审核状态: %d\n", registration.athleteID, registration.projectName, registration.group, registration.nature, registration.athleteNumber, registration.departmentID, registration.approval);
+        }
     }
     rewind(file);
 
+    if(exist){
     printf("请输入要删除的运动员ID: ");
     scanf("%s", athleteID);
     printf("请输入要删除的项目名称: ");
@@ -1475,20 +1547,26 @@ void deleteRegistration() {
     } else {
         printf("报名删除成功\n");
     }
+    } else {
+        printf("暂无可删除项目\n");
+    }
+    printf("-------------------------\n");
 }
 
 void displayAllDepartments() {
-        Department department;
-        FILE *file = fopen("departments.txt", "r");
-        if (file == NULL) {
-            printf("无法打开学院文件\n");
-            return;
-        }
-
-        printf("学院列表:\n");
-        while (fscanf(file, "%s %s", department.departmentID, department.departmentName) != EOF) {
-            printf("学院ID: %s, 学院名称: %s\n", department.departmentID, department.departmentName);
-        }
-
-        fclose(file);
+    printf("-------------------------\n");
+    Department department;
+    FILE *file = fopen("departments.txt", "r");
+    if (file == NULL) {
+        printf("无法打开学院文件\n");
+        return;
     }
+
+    printf("学院列表:\n");
+    while (fscanf(file, "%s %s", department.departmentID, department.departmentName) != EOF) {
+        printf("学院ID: %s, 学院名称: %s\n", department.departmentID, department.departmentName);
+    }
+
+    fclose(file);
+    printf("-------------------------\n");
+}
